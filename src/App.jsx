@@ -6,7 +6,7 @@ import Answers from './Components/Answers'
 function App() {
   const [question, setquestion] = useState('')
   const [result, setResult] = useState(undefined)
-  const [history, sethistory] = useState([''])
+  
 
   
 
@@ -37,7 +37,7 @@ function App() {
     setResult(dataString);
   }
 
-  sethistory=([...question,question])
+  
 
   return (
     
