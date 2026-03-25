@@ -1,1 +1,1 @@
-Git api link here
+Git api link here ("Available in readme.md")
