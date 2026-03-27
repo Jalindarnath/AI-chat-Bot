@@ -1,8 +1,9 @@
-import './App.css'
-import {useState} from 'react'
-const URL = import.meta.env.VITE_GEMINI_API_URI;
-import Answers from './Components/Answers'
+import { useState } from 'react';
+import './App.css';
+import Answers from './Components/Answers';
 
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 function App() {
   const [question, setQuestion] = useState('')
   const [prompt, setPrompt] = useState('') // Stores the submitted question
@@ -11,6 +12,11 @@ function App() {
   
   const askQuestion = async () => {
     if (!question.trim()) return;
+
+    if (!API_KEY || API_KEY === "YOUR_API_KEY_HERE" || API_KEY === '""' || API_KEY === "''") {
+      setResult(["Error: API Key is missing. Please add your Gemini API key to the .env file and restart the development server."]);
+      return;
+    }
     
     setLoading(true);
     setResult(undefined);
