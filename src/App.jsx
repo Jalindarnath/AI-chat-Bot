@@ -9,9 +9,11 @@ function App() {
   const [prompt, setPrompt] = useState('') // Stores the submitted question
   const [result, setResult] = useState(undefined)
   const [loading, setLoading] = useState(false)
+  const [recentSearches, setRecentSearches] = useState([])
   
-  const askQuestion = async () => {
-    if (!question.trim()) return;
+  const askQuestion = async (overrideQuestion) => {
+    const currentQ = typeof overrideQuestion === 'string' ? overrideQuestion : question;
+    if (!currentQ.trim()) return;
 
     if (!API_KEY || API_KEY === "YOUR_API_KEY_HERE" || API_KEY === '""' || API_KEY === "''") {
       setResult(["Error: API Key is missing. Please add your Gemini API key to the .env file and restart the development server."]);
@@ -20,7 +22,13 @@ function App() {
     
     setLoading(true);
     setResult(undefined);
-    setPrompt(question); // lock in the question being asked
+    setPrompt(currentQ); // lock in the question being asked
+    setQuestion(currentQ); // sync the input box
+    
+    setRecentSearches(prev => {
+      const filtered = prev.filter(q => q !== currentQ);
+      return [currentQ, ...filtered].slice(0, 10);
+    });
 
     try {
       const payload = {
@@ -28,7 +36,7 @@ function App() {
           {
             "parts": [
               {
-                "text": question
+                "text": currentQ
               }
             ]
           }
@@ -67,9 +75,24 @@ function App() {
 
   return (
       <div className="grid grid-cols-5 text-center h-screen bg-zinc-900 overflow-hidden">
-        <div className="col-span-1 bg-zinc-950 h-screen text-white border-r border-zinc-800 p-5 hidden md:block">
+        <div className="col-span-1 bg-zinc-950 h-screen text-white border-r border-zinc-800 p-5 hidden md:block overflow-y-auto">
           <h2 className="text-xl font-bold mb-4 text-left">Recent Searches</h2>
-          {/* Recent searches could go here */}
+          <div className="flex flex-col gap-2">
+            {recentSearches.length === 0 ? (
+              <p className="text-zinc-500 text-sm italic">No recent searches yet.</p>
+            ) : (
+              recentSearches.map((search, idx) => (
+                <button 
+                  key={idx} 
+                  onClick={() => askQuestion(search)}
+                  className="text-left text-sm text-zinc-300 hover:text-white bg-zinc-800/50 hover:bg-zinc-700/80 rounded-lg p-3 transition-colors truncate w-full shadow-sm"
+                  title={search}
+                >
+                  {search}
+                </button>
+              ))
+            )}
+          </div>
         </div>
         <div className="col-span-5 md:col-span-4 p-5 md:p-10 flex flex-col h-screen">
           <div className="flex-none mb-6">
