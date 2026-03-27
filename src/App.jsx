@@ -1,20 +1,24 @@
 import './App.css'
 import {useState} from 'react'
-import { URL } from './constants'
+const URL = import.meta.env.VITE_GEMINI_API_URI;
 import Answers from './Components/Answers'
 
 function App() {
-  const [question, setquestion] = useState('')
+  const [question, setQuestion] = useState('')
+  const [prompt, setPrompt] = useState('') // Stores the submitted question
   const [result, setResult] = useState(undefined)
+  const [loading, setLoading] = useState(false)
   
+  const askQuestion = async () => {
+    if (!question.trim()) return;
+    
+    setLoading(true);
+    setResult(undefined);
+    setPrompt(question); // lock in the question being asked
 
-  
-
-
-  
-
-  const payload ={
-    "contents": [
+    try {
+      const payload = {
+        "contents": [
           {
             "parts": [
               {
@@ -23,54 +27,101 @@ function App() {
             ]
           }
         ]
+      };
+
+      let response = await fetch(URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch from Gemini API");
       }
-  const askQuestion= async()=>{
-    let response = await fetch(URL,{
-    method:"POST",
-    body:JSON.stringify(payload)
-    })
-    response = await response.json();
-    let dataString=response.candidates[0].content.parts[0].text;
-    dataString=dataString.split("* ");
-    dataString=dataString.map((item)=>item.trim());
-    //console.log(response.candidates[0].content.parts[0].text);
-    setResult(dataString);
+
+      response = await response.json();
+      
+      let dataString = response.candidates[0].content.parts[0].text;
+      
+      // Basic formatting cleanup
+      dataString = dataString.split("* ");
+      dataString = dataString.map((item) => item.trim()).filter((item) => item.length > 0);
+      
+      setResult(dataString);
+    } catch (error) {
+      console.error(error);
+      setResult(["Sorry, something went wrong while fetching the response. Please check your API key."]);
+    } finally {
+      setLoading(false);
+      setQuestion(''); // Clear input after asking
+    }
   }
 
-  
-
   return (
-    
-      <div className="grid grid-cols-5 text-center">
-        <div className="col-span-1 bg-zinc-800 h-screen text-white">
-        Recent Searches
+      <div className="grid grid-cols-5 text-center h-screen bg-zinc-900 overflow-hidden">
+        <div className="col-span-1 bg-zinc-950 h-screen text-white border-r border-zinc-800 p-5 hidden md:block">
+          <h2 className="text-xl font-bold mb-4 text-left">Recent Searches</h2>
+          {/* Recent searches could go here */}
         </div>
-        <div className="col-span-4 p-10">
-          <div className="">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-            AI ChatBot To Solve Your Doubts</h1></div>
-          <div className="container m-2 text-white w-1/2 mr-4 border-white width bg-zinc-500 rounded-sm justify-between items-end" >
-            {question}
+        <div className="col-span-5 md:col-span-4 p-5 md:p-10 flex flex-col h-screen">
+          <div className="flex-none mb-6">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+              AI ChatBot To Solve Your Doubts
+            </h1>
           </div>
-        <div className=" container h-110 overflow-y-scroll ">
-        <div className="text-white">
-          <ul>
-          {/* {result} */}
-          {
-            result && result.map((item)=>(
-              <li className="text-left p-1"><Answers ans={item}/></li>
-            ))
-          }
-          </ul>
-        </div>
-        </div>
-        <div className="bg-zinc-800 w-1/2 m-auto text-white rounded-4xl p-5 flex border border-zinc-700">
-          <input className="w-full h-full outline-none" value={question} type="text" onChange={(event)=>setquestion(event.target.value)}  placeholder='Ask Me Anything'></input>
-          <button onClick={askQuestion}>Ask</button>
-        </div>
+          
+          <div className="flex-grow flex flex-col overflow-hidden mb-6">
+            <div className="w-full max-h-full overflow-y-auto px-4 flex flex-col gap-4">
+              
+              {prompt && (
+                <div className="w-auto max-w-3/4 p-4 text-white bg-zinc-700/80 rounded-2xl rounded-tr-sm text-left self-end">
+                  {prompt}
+                </div>
+              )}
+              
+              {loading && (
+                <div className="w-auto max-w-3/4 p-4 text-blue-300 bg-zinc-800 rounded-2xl rounded-tl-sm text-left self-start animate-pulse">
+                  Thinking...
+                </div>
+              )}
+              
+              {result && (
+                <div className="w-full sm:max-w-4/5 p-5 text-zinc-200 bg-zinc-800/80 rounded-2xl rounded-tl-sm text-left self-start shadow-sm border border-zinc-700/50">
+                  <ul className="flex flex-col gap-3">
+                  {
+                    result.map((item, index) => (
+                      <li key={index} className="leading-relaxed">
+                        <Answers ans={item} />
+                      </li>
+                    ))
+                  }
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex-none bg-zinc-800/80 w-full lg:w-3/4 mx-auto text-white rounded-full p-2 flex border border-zinc-700 shadow-lg focus-within:border-zinc-500 transition-colors">
+            <input 
+              className="w-full h-12 px-6 outline-none bg-transparent placeholder-zinc-400" 
+              value={question} 
+              type="text" 
+              onKeyDown={(e) => e.key === 'Enter' && askQuestion()}
+              onChange={(event) => setQuestion(event.target.value)}  
+              placeholder='Ask me anything...' 
+            />
+            <button 
+              className={`px-8 py-2 rounded-full font-semibold transition ${loading || !question.trim() ? "bg-zinc-600 text-zinc-400 cursor-not-allowed" : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-md"} `}
+              onClick={askQuestion} 
+              disabled={loading || !question.trim()}
+            >
+              Ask
+            </button>
+          </div>
         </div>
       </div>
-    
   )
 }
 
