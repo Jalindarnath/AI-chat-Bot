@@ -21,6 +21,3 @@ A simple and interactive AI ChatBot application built with React, Vite, and Tail
    ```bash
    npm run dev
    ```
-creating new branch
-
-Added new line
