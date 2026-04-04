@@ -3,7 +3,7 @@ import React from 'react'
 export default function Answers({ ans }) {
   if (!ans) return null;
 
-  // Split the text by exactly **something** to render bold parts individually
+
   const parts = ans.split(/(\*\*.*?\*\*)/g);
 
   return (
